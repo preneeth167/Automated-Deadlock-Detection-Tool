@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Automated Deadlock Detection Tool</title>
+
+<style>
+/* ---------- GLOBAL STYLES ---------- */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+body {
+    height: 100vh;
+    background: linear-gradient(135deg, #141e30, #243b55);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #fff;
+    overflow: hidden;
+}
+
+/* ---------- CONTAINER ---------- */
+.container {
+    width: 420px;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 25px;
+    border-radius: 16px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    animation: slideUp 1.2s ease;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 10px;
+    animation: glow 2s infinite alternate;
+}
+
+.subtitle {
+    text-align: center;
+    font-size: 14px;
+    margin-bottom: 20px;
+    opacity: 0.9;
+}
+
+/* ---------- INPUT CARD ---------- */
+.card {
+    background: rgba(255,255,255,0.15);
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    animation: fadeIn 1.5s ease;
+}
+
+.card h3 {
+    margin-bottom: 10px;
+}
+
+input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    border: none;
+    outline: none;
+}
+
+/* ---------- BUTTONS ---------- */
+button {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.add {
+    background: #00d4ff;
+}
+
+.detect {
+    background: #ff4b5c;
+}
+
+button:hover {
+    transform: scale(1.05);
+}
+
+/* ---------- RESULT ---------- */
+#result {
+    margin-top: 15px;
+    font-size: 15px;
+    text-align: center;
+    animation: pop 0.6s ease;
+}
+
+/* ---------- ANIMATIONS ---------- */
+@keyframes slideUp {
+    from { transform: translateY(60px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes pop {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes glow {
+    from { text-shadow: 0 0 5px #00d4ff; }
+    to { text-shadow: 0 0 20px #00d4ff; }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <h1>Deadlock Detector</h1>
+    <p class="subtitle">Automated Deadlock Detection using Graph Analysis</p>
+
+    <div class="card">
+        <h3>Add Process → Resource</h3>
+        <input type="text" id="from" placeholder="From (P1 or R1)">
+        <input type="text" id="to" placeholder="To (R1 or P2)">
+        <button class="add" onclick="addEdge()">Add Dependency</button>
+    </div>
+
+    <div class="card">
+        <h3>Deadlock Analysis</h3>
+        <button class="detect" onclick="detectDeadlock()">Detect Deadlock</button>
+        <p id="result"></p>
+    </div>
+</div>
+
+<script>
+/* ---------- DEADLOCK LOGIC ---------- */
+
+let graph = {};
+
+// Add dependency
+function addEdge() {
+    let from = document.getElementById("from").value.trim();
+    let to = document.getElementById("to").value.trim();
+
+    if (from === "" || to === "") {
+        alert("Please enter both fields");
+        return;
+    }
+
+    if (!graph[from]) {
+        graph[from] = [];
+    }
+
+    graph[from].push(to);
+
+    document.getElementById("from").value = "";
+    document.getElementById("to").value = "";
+
+    document.getElementById("result").innerHTML =
+        "✔ Dependency Added: <b>" + from + " → " + to + "</b>";
+}
+
+// Deadlock detection using DFS
+function detectDeadlock() {
+    let visited = {};
+    let stack = {};
+
+    function dfs(node) {
+        if (!visited[node]) {
+            visited[node] = true;
+            stack[node] = true;
+
+            let neighbors = graph[node] || [];
+            for (let n of neighbors) {
+                if (!visited[n] && dfs(n)) return true;
+                else if (stack[n]) return true;
+            }
+        }
+        stack[node] = false;
+        return false;
+    }
+
+    for (let node in graph) {
+        if (dfs(node)) {
+            document.getElementById("result").innerHTML =
+                "⚠ <b>Deadlock Detected!</b><br>Resolution: Preempt resources, terminate a process, or reorder requests.";
+            document.getElementById("result").style.color = "#ff4b5c";
+            return;
+        }
+    }
+
+    document.getElementById("result").innerHTML =
+        "✅ <b>No Deadlock Found.</b> System is safe.";
+    document.getElementById("result").style.color = "#00ffcc";
+}
+</script>
+
+</body>
+</html>
